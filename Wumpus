@@ -27,8 +27,8 @@ class WumpusGame(object):
  
 		self.arrows = 5
  
-		self.arrow_travel_distance = 5		# As in the original game. I don't like this choice:
-											# a bow should not cover a whole cave.
+		self.arrow_travel_distance = 5		# As in the original game. 
+							
 		self.player_pos = -1
  
  
@@ -80,7 +80,7 @@ class WumpusGame(object):
 		depth = 0
  
 		def search(stack, visited, target, depth):
-			if stack == []:					# The whole graph was searched, but target was not found.
+			if stack == []:				# The whole graph was searched, but target was not found.
 				return False, -1
 			if target in stack:
 				return True, depth
@@ -89,7 +89,7 @@ class WumpusGame(object):
 			depth += 1
 			if depth > max_depth:			# Target is too far away from the source.
 				return False, depth
-			else:							# Visit all successors of vertices in the stack.
+			else:					# Visit all successors of vertices in the stack.
 				return search(stack, visited, target, depth)
  
 		return search([source], [], target, depth)
@@ -114,37 +114,37 @@ class WumpusGame(object):
 	def get_players_input(self):
 		""" Queries input until valid input is given.
 		"""
-		while 1:								# Query the action.
+		while 1:						# Query the action.
  
 			inpt = input("Disparar o Mover (S/M)? ")
-			try:								# Ensure that the player choses a valid action (shoot or move)
+			try:						# Ensure that the player choses a valid action (shoot or move)
 				mode = str(inpt).lower()
 				assert mode in ['s', 'm', 'q']
 				break
 			except (ValueError, AssertionError):
 				print("Acción no válida: escoge 'S' para disparar o 'M' para moverte.")
  
-		if mode == 'q':							# I added a 'quit-button' for convenience.
+		if mode == 'q':						# I added a 'quit-button' for convenience.
 			return 'q', 0
  
-		while 1:								# Query the target of the action.
+		while 1:						# Query the target of the action.
  
 			inpt = input("¿Por donde irás? ")
-			try:								# Ensure that the chosen target is convertable to an integer.
+			try:						# Ensure that the chosen target is convertable to an integer.
 				target = int(inpt)
 			except ValueError:
 				print("No es un número real..")
-				continue						# Restart the while loop, to get a valid integer as target.
+				continue				# Restart the while loop, to get a valid integer as target.
  
 			if mode == 'm':
-				try:							# When walking, the target must be adjacent to the current room.
+				try:					# When walking, the target must be adjacent to the current room.
 					assert target in self.cave[self.player_pos]
 					break
 				except AssertionError:
 					print("No puedes ir mas allá. Por favor usa uno de los tuneles.")
  
 			elif mode == 's':
-				try:							# When shooting, the target must be reachable within 5 tunnels.
+				try:						# When shooting, the target must be reachable within 5 tunnels.
 					bfs = self.breadth_first_search(self.player_pos, target)
 					assert bfs[0] == True
 					break
@@ -245,8 +245,8 @@ class WumpusGame(object):
  
  
 			inpt = self.get_players_input()		# Player choses move or shoot.
-			print()								# Visual separation of rounds.
-			if inpt[0] == 'm':					# Move.
+			print()					# Visual separation of rounds.
+			if inpt[0] == 'm':				# Move.
 				target = inpt[1] 
 				self.player_pos = self.enter_room(target)
 			elif inpt[0] == 's':				# Shoot.
@@ -256,20 +256,14 @@ class WumpusGame(object):
 				self.player_pos = -1
  
 			if self.player_pos == -1:			# E.g. Deadly threat, quiver empty, etc.
-				break							# If any of the game loosing conditions are True,
-												# then player_pos will be -1. 
+				break					# If any of the game loosing conditions are True,
+									# then player_pos will be -1. 
  
 		print()
 		print("Fin del juego!")	
  
  
 if __name__ == '__main__':						
-	# Only executed if you start this script as the main script,
-	# i.e. you enter 'python path/to/wumpus.py' in a terminal.
-	# Assuming you saved the script in the directory 'path/to' 
-	# and named it 'wumpus.py'.
- 
-	# TODO: In the original game you can replay a dungeon (same positions of you and the threats)
  
 	WG = WumpusGame()
 	WG.gameloop()
