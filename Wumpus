@@ -1,3 +1,10 @@
+"""
+Dev Name: Ismael Garcia
+Desc: Hunt the Wumpus game
+C_Date: 15/02/20
+M_Date: 16/02/20
+"""
+
 import random
  
 class WumpusGame(object):
@@ -5,7 +12,7 @@ class WumpusGame(object):
  
 	def __init__(self, edges=[]):
  
-		# Create arbitrary caves from a list of edges (see the end of the script for example).
+		# Crea mapa en función de esquinas.
 		if edges:
 			cave = {}
 			N = max([edges[i][0] for i in range(len(edges))])
@@ -13,7 +20,7 @@ class WumpusGame(object):
 				exits = [edge[1] for edge in edges if edge[0] == i]
 				cave[i] = exits
  
-		# If no edges are specified, play in the standard cave: a dodecahedron.
+		# Modo estándar: Dodecaedro.
 		else:
 			cave = {1: [2,3,4], 2: [1,5,6], 3: [1,7,8], 4: [1,9,10], 5:[2,9,11],
 				6: [2,7,12], 7: [3,6,13], 8: [3,10,14], 9: [4,5,15], 10: [4,8,16], 
@@ -27,26 +34,24 @@ class WumpusGame(object):
  
 		self.arrows = 5
  
-		self.arrow_travel_distance = 5		# As in the original game. 
+		self.arrow_travel_distance = 5		# Según juego original. 
 							
 		self.player_pos = -1
  
  
 	"""
-	HELPER: These methods wrap processes that are useful or called often.
+	HELPER
 	"""
  
- 
-	def get_safe_rooms(self):
-		""" Returns a list containing all numbers of rooms that
-			do not contain any threats
-		"""
+ 	#Lista de habitaciones que no tienen amenaza
+	
+	def get_safe_rooms(self):	
 		return list(set(self.cave.keys()).difference(self.threats.keys()))
  
- 
+
+	#Genera aletoriamente ubicación de amenazas y jugador.
+
 	def populate_cave(self):
-		""" Drop player and threats into random rooms in the cave.
-		"""
 		for threat in ['bat', 'bat', 'pit', 'pit', 'wumpus']:
 			pos = random.choice(self.get_safe_rooms())
 			self.threats[pos] = threat
@@ -54,128 +59,113 @@ class WumpusGame(object):
  
  
 	def breadth_first_search(self, source, target, max_depth=5):
-		""" The game board (whether custom or standard dodecahedron) is an undirected graph. 
-			The rooms are the vertices and the tunnels are the edges of this graph. To find 
-			out whether a target room can be reached from a source room using a given amount 
-			of tunnels, one can do a breadth first search on the underlying undirected graph.
- 
-			BFS works like this: start with the source vertex, maybe it is already the target? 
-			If not, then go a level deeper and find out, if one of the children (also called 
-			successors) of the source vertex is the wanted target. If not, then for each child, 
-			go a level deeper and find out if one of the grand-children is the wanted target. 
-			If not, then for each grand-child go a level deeper and so on. 
- 
-			The following is a recursive implementation of BFS. You will not find any loops 
-			(for, while). Instead you manage two lists. The first one ('stack') contains all 
-			the vertices of the current depth-level (e.g. all grand children). The second 
-			('visited') contains all vertices that you already checked. Now there are three 
-			possibilites: Either stack is empty, then all vertices have been checked unsuccessfully;
-			or the target vertex is a member of the stack, then you are happy; or the target is 
-			not a member of the stack, but there are still some vertices that you did not visit, 
-			then you append to the stack, all successors of the members of the stack and the old 
-			stack now belongs to the visited vertices.
-		"""
-		# Set up some initial values.
+
+		# Valores iniciales.
 		graph = self.cave
 		depth = 0
  
 		def search(stack, visited, target, depth):
-			if stack == []:				# The whole graph was searched, but target was not found.
+			if stack == []:				
 				return False, -1
 			if target in stack:
 				return True, depth
 			visited = visited + stack
 			stack = list(set([graph[v][i] for v in stack for i in range(len(graph[v]))]).difference(visited))
 			depth += 1
-			if depth > max_depth:			# Target is too far away from the source.
+			if depth > max_depth:			
 				return False, depth
-			else:					# Visit all successors of vertices in the stack.
+			else:					
 				return search(stack, visited, target, depth)
  
 		return search([source], [], target, depth)
  
  
 	"""
-	INPUT / OUTPUT: The player interacts with the game.
+	INPUT / OUTPUT
 	"""
  
- 
+
+	#Muestra amenazas de habitaciones adyacentes.
+
 	def print_warning(self, threat):
-		""" Called when entering a new room. Shows threats in adjacent rooms.
-		"""
+	
 		if threat == 'bat':
 			print("Escuchas un chirrido cerca...")
 		elif threat == 'pit':
-			print("Sientes un viento gélido cerca en la cueva...")
+			print("Sientes un viento gélido cerca...")
 		elif threat == 'wumpus':
 			print("Algo huele realmente mal cerca...")
  
- 
+
+	#Espera input de datos.
+
 	def get_players_input(self):
-		""" Queries input until valid input is given.
-		"""
-		while 1:						# Query the action.
+	
+		while 1:						# Acción.
  
-			inpt = input("Disparar o Mover (S/M)? ")
-			try:						# Ensure that the player choses a valid action (shoot or move)
+			inpt = input("Disparar o Mover (D/M)? ")
+			try:						# El jugador elige (disparo o movimiento)
 				mode = str(inpt).lower()
-				assert mode in ['s', 'm', 'q']
+				assert mode in ['d', 'm', 'q']
 				break
 			except (ValueError, AssertionError):
 				print("Acción no válida: escoge 'S' para disparar o 'M' para moverte.")
  
-		if mode == 'q':						# I added a 'quit-button' for convenience.
+		if mode == 'q':						# q Termina el juego.
 			return 'q', 0
  
-		while 1:						# Query the target of the action.
+		while 1:						
  
-			inpt = input("¿Por donde irás? ")
-			try:						# Ensure that the chosen target is convertable to an integer.
+			inpt = input("¿Por donde? ")
+			try:						
 				target = int(inpt)
 			except ValueError:
 				print("No es un número real..")
-				continue				# Restart the while loop, to get a valid integer as target.
+				continue				
  
 			if mode == 'm':
-				try:					# When walking, the target must be adjacent to the current room.
+				try:					
 					assert target in self.cave[self.player_pos]
 					break
 				except AssertionError:
 					print("No puedes ir mas allá. Por favor usa uno de los tuneles.")
  
-			elif mode == 's':
-				try:						# When shooting, the target must be reachable within 5 tunnels.
+			elif mode == 'd':
+				try:						
 					bfs = self.breadth_first_search(self.player_pos, target)
 					assert bfs[0] == True
 					break
 				except AssertionError:
-					if bfs[1] == -1: 			# The target is outside cave.
+					if bfs[1] == -1: 			
 						print("No existen habitaciones con ese número en la cueva. Tu flecha viajará de forma erratica.")
 						target = random.choice(self.cave.keys())
-					if bfs[1] > self.arrow_travel_distance:				# The target is too far.
-						print("Arrows aren't that croocked.")
+					if bfs[1] > self.arrow_travel_distance:				
+						print("La flecha no tiene tanto alcance..")
  
 		return mode, target
- 
- 
+  
 	"""
-	CORE / GAME LOGIC
+	Lógica del juego
 	"""
- 
- 
+  
 	def enter_room(self, room_number):
-		""" Controls the process of entering a new room.
+		""" Control acceso a habitación.
 		"""	
+		
 		print("Entrando en habitación {}...".format(room_number))
-		# Maybe a threat waits in the new room.	
+		
+		# Probabilidad de amenaza al entrar en habitación nueva.	
 		if self.threats.get(room_number) == 'bat':
-			# The bat teleports the player to random empty room
+		
+			# Murcielago teletransporta a jugador a habitación vacia
 			print("Te has topado con un murcielago, este te ha transortado a una habitación aleatoria abandonada.")
 			new_pos = random.choice(self.get_safe_rooms())
 			return self.enter_room(new_pos)
+			
 		elif self.threats.get(room_number) == 'wumpus':
 			print("Wumpus te ha comido.")
 			return -1
+			
 		elif self.threats.get(room_number) == 'pit':
 			print("Te has caido por un pozo.")
 			return -1
@@ -189,10 +179,14 @@ class WumpusGame(object):
  
  
 	def shoot_room(self, room_number):
-		""" Controls the process of shooting in a room.
+	
+		""" Control proceso de disparos en habitación.
 		"""
+		
 		print("Disparas una flecha a la habitación {}...".format(room_number))
-		# Fire an arrow and see if something is hit by it.
+		
+		# Dispara una flecha y comprueba si ha acertado.
+		
 		self.arrows -= 1
 		threat = self.threats.get(room_number)
 		if threat in ['bat', 'wumpus']:
@@ -205,12 +199,12 @@ class WumpusGame(object):
 		elif threat in ['pit', None]:
 			print("Se ha perdido la fecha.")
  
-		# If this was your last arrow and it did not hit the wumpus...
-		if self.arrows < 1:		# This (or the updating of self.arrows) seems to be broken...
+		# Si disparas tu última flecha sin matar a Wumpus...
+		if self.arrows < 1:		
 			print("Te has quedado sin munición.")
 			return -1
  
-		#  If you shoot into another room, the Wumpus has a 75% of chance of waking up and moving into an adjacent room.
+		#  Si disparas a otra habitación, Wumpus tiene un 75% de probabilidad de despertarse y moverse a una habitación adyacente.
 		if random.random() < 0.75:
 			#print("DEBUG: Wumpus moved.")
 			for room_number, threat in self.threats.items():
@@ -219,7 +213,7 @@ class WumpusGame(object):
 			new_pos = random.choice(list(set(self.cave[wumpus_pos]).difference(self.threats.keys())))
 			del self.threats[room_number]
 			self.threats[new_pos] = 'wumpus'			
-			if new_pos == self.player_pos: # Wumpus entered players room.
+			if new_pos == self.player_pos: 			# Wumpus entra en la habitación del jugador.
 				print("Wumpus entra en tu habitación y te come")
 				return -1
  
@@ -228,7 +222,7 @@ class WumpusGame(object):
  
 	def gameloop(self):
  
-		print("HUNT THE WUMPUS")
+		print("CAZA A WUMPUS")
 		print("===============")
 		print()
 		self.populate_cave()
@@ -236,28 +230,28 @@ class WumpusGame(object):
  
 		while 1:
  
-			#print("DEBUG: Your quiver holds {} arrows.".format(self.arrows))			
-			#print("DEBUG: Rooms with no threats are: {}.".format(self.get_safe_rooms()))			
-			#print("DEBUG: Threats are located in the following rooms: {}".format(self.threats))
+			#print("DEBUG: Tu carcaj contiene {} flechas.".format(self.arrows))			
+			#print("DEBUG: Las habitaciones seguras son: {}.".format(self.get_safe_rooms()))			
+			#print("DEBUG: Las amenazas están en las habitaciones: {}".format(self.threats))
  
 			print("Estás en la habitación {}.\n".format(self.player_pos), end=" ")
 			print("\nPuedes ir a las habitaciones:  {0}  {1}  {2}".format(*self.cave[self.player_pos]))
  
  
-			inpt = self.get_players_input()		# Player choses move or shoot.
-			print()					# Visual separation of rounds.
-			if inpt[0] == 'm':				# Move.
+			inpt = self.get_players_input()		# El jugador elige moverse o disparar.
+			print()					# Separador entre mensajes.
+			if inpt[0] == 'm':				# Moverse.
 				target = inpt[1] 
 				self.player_pos = self.enter_room(target)
-			elif inpt[0] == 's':				# Shoot.
+			elif inpt[0] == 'd':				# Disparar.
 				target = inpt[1]
 				self.player_pos = self.shoot_room(target)
-			elif inpt[0] == 'q':				# Quit.
+			elif inpt[0] == 'q':				# Salir del juego.
 				self.player_pos = -1
  
-			if self.player_pos == -1:			# E.g. Deadly threat, quiver empty, etc.
-				break					# If any of the game loosing conditions are True,
-									# then player_pos will be -1. 
+			if self.player_pos == -1:			# -1 Equivale a muerte del jugador o salir del juego.
+				break					
+									 
  
 		print()
 		print("Fin del juego!")	
